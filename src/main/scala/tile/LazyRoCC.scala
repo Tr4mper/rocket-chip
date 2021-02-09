@@ -127,6 +127,20 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
   val busy = RegInit(VecInit(Seq.fill(outer.n){false.B}))
 
   val cmd = Queue(io.cmd)
+  // parts of the command (see RoCCCommand):
+  // cmd.bits.inst        - (see RoCCInstruction)
+    // cmd.bits.inst.opcode - opcode
+    // cmd.bits.inst.rd     - destination register number
+    // cmd.bits.inst.rs1    - first source register number
+    // cmd.bits.inst.rs2    - second source register number
+    // cmd.bits.inst.funct  - selects type of operation
+    // cmd.bits.inst.xd     - destination register used?
+    // cmd.bits.inst.xs1    - first source register used?
+    // cmd.bits.inst.xs2    - second source register used?
+  // cmd.bits.rs1         - first source register
+  // cmd.bits.rs2         - second source register
+  // cmd.bits.status      - ???
+
   val funct = cmd.bits.inst.funct
   val addr = cmd.bits.rs2(log2Up(outer.n)-1,0)
   val doWrite = funct === 0.U
