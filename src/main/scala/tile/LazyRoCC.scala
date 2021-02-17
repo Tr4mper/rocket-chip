@@ -142,12 +142,17 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
   // cmd.bits.status      - ???
 
   val funct = cmd.bits.inst.funct
-  val doAdd = funct === 0.U
+  val doStore = funct === 0.U
+  val doLoad = funct === 1.U
 
   // datapath
   val value1 = cmd.bits.rs1
   val value2 = cmd.bits.rs2
-  val result = Mux(doAdd, value1 + value2, value1 - value2)
+  val result = Mux(doLoad, regfile(value2), 0.U)
+
+  when (doStore) {
+    regfile(value2) := value1
+  }
 
   // command resolved
   cmd.ready := true.B
