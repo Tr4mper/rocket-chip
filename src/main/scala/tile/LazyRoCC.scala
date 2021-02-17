@@ -201,7 +201,122 @@ class AccumulatorExampleModuleImp(outer: AccumulatorExample)(implicit p: Paramet
   io.mem.req.bits.dprv := cmd.bits.status.dprv
 }
 
-class  TranslatorExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes, nPTWPorts = 1) {
+class ArithmeticExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes) {
+  override lazy val module = new ArithmeticExampleModuleImp(this)
+}
+
+class ArithmeticExampleModuleImp(outer: ArithmeticExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer)
+    with HasCoreParameters {
+
+  val cmd = Queue(io.cmd)
+  // parts of the command (see RoCCCommand):
+  // cmd.bits.inst        - (see RoCCInstruction)
+    // cmd.bits.inst.opcode - opcode
+    // cmd.bits.inst.rd     - destination register number
+    // cmd.bits.inst.rs1    - first source register number
+    // cmd.bits.inst.rs2    - second source register number
+    // cmd.bits.inst.funct  - selects type of operation
+    // cmd.bits.inst.xd     - destination register used?
+    // cmd.bits.inst.xs1    - first source register used?
+    // cmd.bits.inst.xs2    - second source register used?
+  // cmd.bits.rs1         - first source register
+  // cmd.bits.rs2         - second source register
+  // cmd.bits.status      - ???
+
+  val funct = cmd.bits.inst.funct
+  val doAdd = funct === 0.U
+
+  val value1 = cmd.bits.rs1
+  val value2 = cmd.bits.rs2
+  val result = Mux(doAdd, value1 + value2, value1 - value2)
+
+  cmd.ready := true.B
+
+  // PROC RESPONSE INTERFACE
+  io.resp.valid := cmd.valid
+  io.resp.bits.rd := cmd.bits.inst.rd
+  io.resp.bits.data := result
+
+  io.busy := cmd.valid
+  io.interrupt := false.B
+}
+
+class MemoryExample(opcodes: OpcodeSet, val n: Int = 4)(implicit p: Parameters) extends LazyRoCC(opcodes) {
+  override lazy val module = new MemoryExampleModuleImp(this)
+}
+
+class MemoryExampleModuleImp(outer: MemoryExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer)
+    with HasCoreParameters {
+
+  // Mem(x,y) - memory for x elements of type y
+  val memory = Mem(outer.n, UInt(xLen.W))
+
+  val cmd = Queue(io.cmd)
+
+  val funct = cmd.bits.inst.funct
+  val doStore = funct === 0.U
+  val doLoad = funct === 1.U
+
+  val value1 = cmd.bits.rs1
+  val value2 = cmd.bits.rs2
+
+  // load
+  val result = Mux(doLoad, memory(value2), 0.U)
+
+  // store
+  when (doStore) {
+    memory(value2) := value1
+  }
+
+  cmd.ready := true.B
+
+  // response
+  io.resp.valid := cmd.valid
+  io.resp.bits.rd := cmd.bits.inst.rd
+  io.resp.bits.data := result
+
+  io.busy := cmd.valid
+  io.interrupt := false.B
+}
+
+class RegisterExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes) {
+  override lazy val module = new RegisterExampleModuleImp(this)
+}
+
+class RegisterExampleModuleImp(outer: RegisterExample)(implicit p: Parameters) extends LazyRoCCModuleImp(outer)
+    with HasCoreParameters {
+
+  val register = Reg(UInt(xLen.W))
+
+  val cmd = Queue(io.cmd)
+
+  val funct = cmd.bits.inst.funct
+  val doStore = funct === 0.U
+  val doLoad = funct === 1.U
+
+  val value1 = cmd.bits.rs1
+  val value2 = cmd.bits.rs2
+
+  // load
+  val result = Mux(doLoad, register, value1)
+
+  // store
+  when (doStore) {
+    register := value1
+  }
+
+  cmd.ready := true.B
+
+  // response
+  io.resp.valid := cmd.valid
+  io.resp.bits.rd := cmd.bits.inst.rd
+  io.resp.bits.data := result
+
+  io.busy := cmd.valid
+  io.interrupt := false.B
+}
+
+class TranslatorExample(opcodes: OpcodeSet)(implicit p: Parameters) extends LazyRoCC(opcodes, nPTWPorts = 1) {
   override lazy val module = new TranslatorExampleModuleImp(this)
 }
 

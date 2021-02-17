@@ -274,16 +274,16 @@ class WithNBreakpoints(hwbp: Int) extends Config ((site, here, up) => {
 class WithRoccExample extends Config((site, here, up) => {
   case BuildRoCC => List(
     (p: Parameters) => {
-        val accumulator = LazyModule(new AccumulatorExample(OpcodeSet.custom0, n = 4)(p))
-        accumulator
+        val arithmetic = LazyModule(new ArithmeticExample(OpcodeSet.custom0)(p))
+        arithmetic
     },
     (p: Parameters) => {
-        val translator = LazyModule(new TranslatorExample(OpcodeSet.custom1)(p))
-        translator
+        val memory = LazyModule(new MemoryExample(OpcodeSet.custom1, n = 4)(p))
+        memory
     },
     (p: Parameters) => {
-        val counter = LazyModule(new CharacterCountExample(OpcodeSet.custom2)(p))
-        counter
+        val register = LazyModule(new RegisterExample(OpcodeSet.custom2)(p))
+        register
     },
     (p: Parameters) => {
       val blackbox = LazyModule(new BlackBoxExample(OpcodeSet.custom3, "RoccBlackBox")(p))
